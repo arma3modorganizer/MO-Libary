@@ -1,7 +1,6 @@
 # MO-Libary (WIP)
 
 [![dependency status](https://deps.rs/repo/github/arma3modorganizer/MO-Libary/status.svg)](https://deps.rs/repo/github/arma3modorganizer/MO-Libary)
-
 [![Travis CI](https://travis-ci.org/arma3modorganizer/MO-Libary.svg?branch=master)](https://travis-ci.org/arma3modorganizer/MO-Libary)
 
 This is the backend libary, that powers all Arma3 Mod Organizer projects.

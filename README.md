@@ -1,0 +1,14 @@
+# MO-Libary (WIP)
+This is the backend libary, that powers all Arma3 Mor Organizer projects.
+
+Due to the WIP status of the project, anything can and will most likely change !
+
+## Usage
+ 1. Clone the repository
+ 2. Use ```cargo build --all --all-targets``` to build it.
+    1. If you are using rust, you can instead import it as a cargo crate:
+    ```
+    [dependencies]
+    a3mo_lib = {path="path_to_lib_folder"}
+    ```
+ 3. An example for FFI bindings will be uploaded, once the Libary is no longer WIP.

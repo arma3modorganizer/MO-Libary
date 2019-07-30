@@ -104,17 +104,14 @@ fn build_tree(name: &str, arena: &mut Arena<FileSystemEntity>) -> Result<NodeId,
 
 /// (Re)build a repository
 /// [name] : Repository name (Has to be created using new command)
-pub fn build(name: &str) -> Result<String, BuildRepoError> {
-    //let graph = build_graph(name)?;
-
-    //let graph_json = serde_json::to_string(&graph)?;
-
+pub fn build(name: &str) -> Result<(), BuildRepoError> {
     let arena = &mut Arena::new();
     let root_node = build_tree(name, arena)?;
-
     let sn = Node::new(root_node, arena);
+
     let json = serde_json::to_string(&sn)?;
 
+    //Save json at repo
 
-    Ok(json)
+    Ok(())
 }

@@ -1,4 +1,8 @@
 # MO-Libary (WIP)
+
+![dependency status](https://deps.rs/repo/github/arma3modorganizer/MO-Libary/status.svg)](https://deps.rs/repo/github/arma3modorganizer/MO-Libary)
+
+
 This is the backend libary, that powers all Arma3 Mor Organizer projects.
 
 Due to the WIP status of the project, anything can and will most likely change !

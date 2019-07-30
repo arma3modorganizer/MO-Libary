@@ -6,6 +6,12 @@ edition = "2018"
 description = "Arma3 Mod Organizer libary. Provides funktions for CLI Client and GUI"
 license = "MIT"
 
+[badges]
+appveyor = { repository = "https://github.com/arma3modorganizer/CLI-Interface", branch = "master", service = "github" }
+travis-ci = { repository = "https://github.com/arma3modorganizer/CLI-Interface", branch = "master" }
+#coveralls = { repository = "https://github.com/arma3modorganizer/CLI-Interface", branch = "master", service = "github" }
+maintenance = { status = "actively-developed" }
+
 [dependencies]
 blake2b_simd = "0.5.5"
 rand = "0.7.0"

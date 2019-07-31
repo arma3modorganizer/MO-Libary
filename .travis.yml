@@ -1,9 +1,16 @@
 language: rust
 rust:
   - nightly
-script:
-  - cargo build --verbose --all
-  - cargo test --verbose --all
 cache: cargo
 os:
   - linux
+before_script:
+  - cargo install cargo-kcov
+script:
+  - cargo build --verbose --all
+  - cargo test --verbose --all
+  - cargo doc --no-deps
+
+after_success:
+  - if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]] && [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cargo kcov --print-install-kcov-sh | sh; fi
+  - if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]] && [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cargo kcov --coveralls --kcov ./kcov-33/build/src/kcov; fi

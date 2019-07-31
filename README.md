@@ -20,3 +20,12 @@ Due to the WIP status of the project, anything can and will most likely change !
     a3mo_lib = {path="path_to_lib_folder"}
     ```
  3. An example for FFI bindings will be uploaded, once the Libary is no longer WIP.
+
+## TODO
+ - Finalize *Build*
+ - Add Features:
+   - List
+   - Remove
+ - Add Delta Patching
+ - Add Tests
+ 

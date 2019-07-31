@@ -14,3 +14,16 @@ script:
 after_success:
   - if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]] && [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cargo kcov --print-install-kcov-sh | sh; fi
   - if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]] && [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cargo kcov --coveralls --kcov ./kcov-33/build/src/kcov; fi
+addons:
+  apt:
+    sources:
+      - kalakris-cmake
+    packages:
+      - cmake
+      - libcurl4-openssl-dev
+      - libiberty-dev
+      - libelf-dev
+      - libdw-dev
+      - binutils-dev
+      - libpcap-dev
+      - bison

@@ -3,6 +3,8 @@
 [![dependency status](https://deps.rs/repo/github/arma3modorganizer/MO-Libary/status.svg)](https://deps.rs/repo/github/arma3modorganizer/MO-Libary)
 [![Travis CI](https://travis-ci.org/arma3modorganizer/MO-Libary.svg?branch=master)](https://travis-ci.org/arma3modorganizer/MO-Libary)
 [![Build status](https://ci.appveyor.com/api/projects/status/d39clo2lta1qbv08?svg=true)](https://ci.appveyor.com/project/Scarjit/mo-libary)
+[![Crates.io](https://img.shields.io/crates/v/a3mo_lib)](https://crates.io/crates/a3mo_lib)
+[![License MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/arma3modorganizer/MO-Libary/blob/master/LICENSE)
 
 This is the backend libary, that powers all Arma3 Mod Organizer projects.
 

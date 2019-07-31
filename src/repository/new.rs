@@ -11,10 +11,10 @@ custom_error! {pub NewRepoError
 }
 
 /// Generates a new repository.
-/// [name] : Repository name (used for the Build command and displayed on the GUI)
-/// [path] : Path on your machine to the mods folder (can be relative or absolute)
-/// [url] : URL to the mods folder. (A3MO generates an json file inside the folder)
-/// [delta_patch] : Only transfers updated file chunks to the client, instead of updating the complete file
+/// [name: &str] : Repository name (used for the Build command and displayed on the GUI)
+/// [path: &str] : Path on your machine to the mods folder (can be relative or absolute)
+/// [url: &str] : URL to the mods folder. (A3MO generates an json file inside the folder)
+/// [delta_patch: bool] : Only transfers updated file chunks to the client, instead of updating the complete file
 pub fn new(name: &str, path: &str, url: &str, delta_patch: bool) -> Result<(), NewRepoError> {
     if Path::exists(path.as_ref()) == false {
         return Err(NewRepoError::FolderNotFound);

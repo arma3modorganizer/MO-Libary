@@ -103,7 +103,7 @@ fn build_tree(name: &str, arena: &mut Arena<FileSystemEntity>) -> Result<NodeId,
 
 
 /// (Re)build a repository
-/// [name] : Repository name (Has to be created using new command)
+/// [name: &str] : Repository name (Has to be created using new command)
 pub fn build(name: &str) -> Result<(), BuildRepoError> {
     let arena = &mut Arena::new();
     let root_node = build_tree(name, arena)?;

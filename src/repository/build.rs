@@ -111,10 +111,7 @@ fn build_tree(name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: String
             None => {0}
         };
         let parent_name = node_name.split_at(xf).0;
-/*
-        println!("{:?}", node_name);
-        println!("{:?}", parent_name);
-*/
+
         let parent = node_map.get(parent_name);
         match parent {
             Some(v) => {

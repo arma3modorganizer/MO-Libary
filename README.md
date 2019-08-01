@@ -29,3 +29,8 @@ Due to the WIP status of the project, anything can and will most likely change !
  - Add Delta Patching
  - Add Tests
  
+ ## Licenses
+ ### [rust-fasthash](https://github.com/flier/rust-fasthash)
+ Rust-fasthash is developed under [Apache 2.0 License](https://github.com/flier/rust-fasthash/blob/master/LICENSE).
+Changes where made to adapt it for easier use with Files.
+The license file is also found under [crypto/apache_2_0](src/crypto/apache_2_0)

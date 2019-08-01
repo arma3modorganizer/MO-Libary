@@ -25,7 +25,7 @@ custom_error! {pub BuildRepoError
     FolderNotFound = "Folder not found!",
     SQLError{source: rusqlite::Error} = "SQL Error",
     WalkDirError{source: walkdir::Error} = "Walkdir Error",
-    CryptoError{source: crate::crypto::xx_hasher::CryptoError} = "Crypto Error",
+    CryptoError{source: easy_xxhash64::file_hash::CryptoError} = "Crypto Error",
     SerdeError{source: serde_json::Error} = "Serde Error",
     SystemTimeErr{source: std::time::SystemTimeError} = "System Time Error"
 }
@@ -41,7 +41,7 @@ impl FileSystemEntity {
         let is_directory = Path::is_dir(name.as_ref());
         let mut xhash: u64 = 0;
         if !is_directory {
-            xhash = crate::crypto::xx_hasher::hash_path(name.as_ref())?
+            xhash = easy_xxhash64::file_hash::hash_path(name.as_ref())?
         }
         println!("{:?}:\t{:?}", &name, &xhash);
         Ok(FileSystemEntity {

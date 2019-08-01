@@ -27,7 +27,7 @@ rayon = "1.1.0"
 serde = { version = "1.0.90",features = ["derive"] }
 serde_derive = { version = "1.0.90" }
 serde_json = {version = "1.0.40"}
-easy_xxhash64 = {path = "../easy_xxhash64"}
+easy_xxhash64 = "1.1.6"
 
 serde_indextree = "0.1.0"
 [dependencies.indextree]

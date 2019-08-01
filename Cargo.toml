@@ -9,7 +9,7 @@ license = "MIT"
 [badges]
 appveyor = { repository = "Scarjit/mo-libary", branch = "master", service = "github" }
 travis-ci = { repository = "arma3modorganizer/MO-Libary", branch = "master" }
-#coveralls = { repository = "https://github.com/arma3modorganizer/CLI-Interface", branch = "master", service = "github" }
+coveralls = { repository = "https://github.com/arma3modorganizer/MO-Libary", branch = "master", service = "github" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]

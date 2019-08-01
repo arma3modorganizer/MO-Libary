@@ -29,6 +29,10 @@ Due to the WIP status of the project, anything can and will most likely change !
  - Add Delta Patching
  - Add Tests
  
- ## Licenses
- ### [EasyXXHash64](https://github.com/arma3modorganizer/EasyXXHash64)
-EasyXXHash64 is developed under [Apache 2.0 License](https://github.com/arma3modorganizer/EasyXXHash64/LICENSE).
+ 
+## Licenses
+MO-Libary is developed under [MIT License](https://github.com/arma3modorganizer/MO-Libary/LICENSE).
+
+## Credits
+ - [Jetbrains](https://www.jetbrains.com/) for CLion <3
+ 

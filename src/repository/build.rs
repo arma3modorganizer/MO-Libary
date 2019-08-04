@@ -7,6 +7,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 extern crate rayon;
 use rayon::prelude::*;
 
+use delta_patch;
+
 extern crate rusqlite;
 
 extern crate custom_error;
@@ -16,32 +18,40 @@ use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
 use serde_json;
-use serde_indextree::Node;
 use crate::sql::sqlite::Repository;
 use std::fs::{File, DirBuilder};
 use self::rusqlite::Error;
+use delta_patch::mksum::SignatureOptions;
+
+extern crate failure;
 
 custom_error! {pub BuildRepoError
     FolderNotFound = "Folder not found!",
+    NodeAppendError = "Node could not be appended",
     SQLError{source: rusqlite::Error} = "SQL Error",
     WalkDirError{source: walkdir::Error} = "Walkdir Error",
     CryptoError{source: easy_xxhash64::file_hash::CryptoError} = "Crypto Error",
     SerdeError{source: serde_json::Error} = "Serde Error",
-    SystemTimeErr{source: std::time::SystemTimeError} = "System Time Error"
+    SystemTimeErr{source: std::time::SystemTimeError} = "System Time Error",
+    IOError{source: std::io::Error} = "IO Error"
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FileSystemEntity {
     pub name: String,
     pub is_folder: bool,
     pub hash: u64,
 }
 impl FileSystemEntity {
-    pub fn new(name: &str, repo_path: &str) -> Result<FileSystemEntity, BuildRepoError> {
+    pub fn new(name: &str, repo_path: &str, delta_patch: bool) -> Result<FileSystemEntity, BuildRepoError> {
         let is_directory = Path::is_dir(name.as_ref());
         let mut xhash: u64 = 0;
         if !is_directory {
-            xhash = easy_xxhash64::file_hash::hash_path(name.as_ref())?
+            xhash = easy_xxhash64::file_hash::hash_path(name.as_ref())?;
+            let signame: String = String::from(name) + ".a3mo_delta";
+            let mut base = File::open(&name)?;
+            let mut sig = File::create(&signame)?;
+            delta_patch::mksum::generate_signature(&mut base, &SignatureOptions::default(), &mut sig)?;
         }
         println!("{:?}:\t{:?}", &name, &xhash);
         Ok(FileSystemEntity {
@@ -52,7 +62,7 @@ impl FileSystemEntity {
     }
 }
 
-fn build_tree(name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: String, rayon: bool) -> Result<NodeId, BuildRepoError> {
+fn build_tree(name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: String, rayon: bool, delta_patch: bool) -> Result<NodeId, BuildRepoError> {
     let mut node_map: HashMap<String, NodeId> = HashMap::new();
 
     let mut root_node: Option<NodeId> = None;
@@ -66,7 +76,7 @@ fn build_tree(name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: String
             let f = fa.as_ref().unwrap();
 
             let fname = f.path().to_str().unwrap();
-            let fse = FileSystemEntity::new(fname, &repo_path.as_str()).unwrap();
+            let fse = FileSystemEntity::new(fname, &repo_path.as_str(), delta_patch).unwrap();
             fse
         }).collect();
 
@@ -87,7 +97,7 @@ fn build_tree(name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: String
 
             let fname = f.path().to_str().unwrap();
 
-            let fse = FileSystemEntity::new(fname, &repo_path.as_str())?;
+            let fse = FileSystemEntity::new(fname, &repo_path.as_str(), delta_patch)?;
 
             let fse_s = String::from(&fse.name);
 
@@ -115,7 +125,9 @@ fn build_tree(name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: String
         let parent = node_map.get(parent_name);
         match parent {
             Some(v) => {
-                v.append(*node_index, arena);
+                #[allow(unused_must_use)] {
+                    v.append(*node_index, arena);
+                }
             }
             None => {
                 continue
@@ -127,11 +139,25 @@ fn build_tree(name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: String
     Ok(root_node.unwrap())
 }
 
+fn remove_old_delta(path: &str) -> Result<(), BuildRepoError>{
+    let root_path = path.trim_end_matches(".a3mo");
+    for f in WalkDir::new(root_path){
+        let fx = f?;
+        let path = fx.path();
+
+        if path.to_str().unwrap().contains(".a3mo_delta") {
+            println!("{:?}", fx);
+            std::fs::remove_file(path);
+        }
+    }
+
+    Ok(())
+}
 
 /// (Re)build a repository
-/// [name: &str] : Repository name (Has to be created using new command)
-/// [fmt_json: bool] : Output formatted json
-/// [rayon: bool] : Parallelize building using rayon (requires multiple cores/threads)
+/// * `name` : Repository name (Has to be created using new command)
+/// * `fmt_json` : Output formatted json
+/// * `rayon` : Parallelize building using rayon (requires multiple cores/threads)
 pub fn build(name: &str, fmt_json: bool, rayon: bool) -> Result<(), BuildRepoError> {
     let repo = sqlite::get_repository(name)?;
 
@@ -143,24 +169,32 @@ pub fn build(name: &str, fmt_json: bool, rayon: bool) -> Result<(), BuildRepoErr
     let start = SystemTime::now();
 
     let sync_folder_path : String = String::clone(&repo.path) + "\\.a3mo";
+
     //Delete sync folder
-    std::fs::remove_dir_all(&sync_folder_path);
+    #[allow(unused_must_use)] {
+        std::fs::remove_dir_all(&sync_folder_path);
+    }
+
+    if repo.delta_patch {
+        remove_old_delta(&sync_folder_path);
+    }
 
     let arena = &mut Arena::new();
-    let root_node = build_tree(name, arena, String::clone(&repo.path), rayon)?;
-    let sn = Node::new(root_node, arena);
+
+    let root_node = build_tree(name, arena, String::clone(&repo.path), rayon, repo.delta_patch)?;
+
 
     let json = if !fmt_json {
-        serde_json::to_string(&sn)?
+        serde_json::to_string(&arena)?
     }else{
-        serde_json::to_string_pretty(&sn)?
+        serde_json::to_string_pretty(&arena)?
     };
 
     //Create sync folder
-    std::fs::create_dir(&sync_folder_path);
+    std::fs::create_dir(&sync_folder_path)?;
 
     //Save json at repo
-    std::fs::write(sync_folder_path + "\\sync.json", json);
+    std::fs::write(sync_folder_path + "\\sync.json", json)?;
 
     println!("Finished building. {:?} sec", start.elapsed()?);
 

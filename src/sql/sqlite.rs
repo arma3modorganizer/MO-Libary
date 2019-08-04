@@ -48,8 +48,8 @@ pub fn get_repository(name: &str) -> Result<Repository> {
     let repo = stmt.query_map(&[name], |row| {
         let d: String = row.get(4)?;
 
-        let df = d == "True".to_string();
 
+        let df = d.to_lowercase().contains("true");
         Ok(Repository {
             id: row.get(0)?,
             name: row.get(1)?,

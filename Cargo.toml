@@ -23,17 +23,24 @@ custom_error = "1.6.0"
 walkdir = "2.2.9"
 rayon = "1.1.0"
 #petgraph = {version="0.4.13", features = ["serde-1"]}
+url = "2.0.0"
+reqwest = "0.9.19"
 
 serde = { version = "1.0.90",features = ["derive"] }
 serde_derive = { version = "1.0.90" }
 serde_json = {version = "1.0.40"}
 easy_xxhash64 = "1.1.6"
+failure = "0.1.5"
+delta_patch = {path = "../delta_patch"}
 
-serde_indextree = "0.1.0"
+
 [dependencies.indextree]
-version = "3.3.0"
-feature = ["deser"]
+version = "4.0.0"
+features = ["deser"]
 
 [dependencies.rusqlite]
 version = "0.20.0"
 features = ["bundled"]
+
+
+

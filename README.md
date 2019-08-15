@@ -22,12 +22,10 @@ Due to the WIP status of the project, anything can and will most likely change !
  3. An example for FFI bindings will be uploaded, once the Libary is no longer WIP.
 
 ## TODO
- - Finalize *Build*
- - Add Features:
-   - List
-   - Remove
- - Add Delta Patching
- - Add Tests
+ - Add Update.rs
+    - Updates given repository (client-side)
+ - Add Run.rs
+    - Starts ArmA3 with given repository and additional arguments
  
  
 ## Licenses

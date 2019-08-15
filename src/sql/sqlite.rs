@@ -18,8 +18,7 @@ fn create(conn: &mut Connection) -> Result<()> {
          id integer primary key,\
          name text not null unique,\
          path text not null,\
-         url text not null,\
-         delta_patch integer);",
+         url text not null);",
         NO_PARAMS,
     )?;
 
@@ -118,14 +117,14 @@ pub fn insert_folder(name: &str, repo_id: i64, parent_id: Option<i64>, conn: &Co
 }
 
 
-pub fn insert_repository(name: &str, path: &str, url: &str, delta_patch: bool, conn: &mut Connection) -> Result<()> {
+pub fn insert_repository(name: &str, path: &str, url: &str, conn: &mut Connection) -> Result<()> {
     create(conn)?;
 
     conn.execute(
         "INSERT INTO repositories \
-         (id, name, path, url, delta_patch) \
-         VALUES (NULL, ?1, ?2, ?3, ?4)",
-        &[name, path, url, delta_patch.to_string().as_str()],
+         (id, name, path, url) \
+         VALUES (NULL, ?1, ?2, ?3)",
+        &[name, path, url],
     )?;
 
     Ok(())
@@ -136,27 +135,23 @@ pub struct Repository {
     pub id: i64,
     pub name: String,
     pub path: String,
-    pub url: String,
-    pub delta_patch: bool,
+    pub url: String
 }
 
-pub fn get_repository(name: &str) -> Result<Repository> {
-    let conn = Connection::open("a3mm.sqlite3")?;
+pub fn get_repository(name: &str, mut conn: &mut Connection) -> Result<Repository> {
+    create(&mut conn)?;
+
     let mut stmt = conn.prepare(
-        "SELECT id, name, path, url, delta_patch FROM repositories WHERE name = ?1 LIMIT 1",
+        "SELECT id, name, path, url FROM repositories WHERE name = ?1 LIMIT 1",
     )?;
 
     let repo = stmt.query_map(&[name], |row| {
-        let d: String = row.get(4)?;
 
-
-        let df = d.to_lowercase().contains("true");
         Ok(Repository {
             id: row.get(0)?,
             name: row.get(1)?,
             path: row.get(2)?,
-            url: row.get(3)?,
-            delta_patch: df,
+            url: row.get(3)?
         })
     })?;
 
@@ -164,4 +159,66 @@ pub fn get_repository(name: &str) -> Result<Repository> {
         Some(x) => x,
         None => Err(rusqlite::Error::InvalidQuery),
     }
+}
+
+#[derive(Debug)]
+pub struct RFolder {
+    pub id: i64,
+    pub name: String,
+    pub is_root: bool,
+    pub parent_id: i64
+}
+
+pub fn get_repo_folders(repo_id: i64, conn: &mut Connection)-> Result<Vec<RFolder>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, name, is_root, parent_id FROM folder WHERE repository_id = ?1",
+    )?;
+
+    let folders = stmt.query_map(&[repo_id], |row| {
+        let isroot: String = row.get(2)?;
+
+        Ok(RFolder {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            is_root: isroot.ends_with("true"),
+            parent_id: row.get(3)?
+        })
+    })?;
+
+    let _repo_folders : Vec<RFolder> = folders.map(|f| {
+        f.unwrap()
+    }).collect();
+
+
+    Ok(_repo_folders)
+}
+
+#[derive(Debug)]
+pub struct RFile {
+    pub id: i64,
+    pub name: String,
+    pub xx_hash64: String,
+    pub parent_id: i64
+}
+
+pub fn get_repo_files(repo_id: i64, conn: &mut Connection)-> Result<Vec<RFile>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, name, xxHash64, parent_id FROM file WHERE repository_id = ?1",
+    )?;
+
+    let files = stmt.query_map(&[repo_id], |row| {
+        Ok(RFile {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            xx_hash64: row.get(2)?,
+            parent_id: row.get(3)?
+        })
+    })?;
+
+    let _repo_files : Vec<RFile> = files.map(|f| {
+        f.unwrap()
+    }).collect();
+
+
+    Ok(_repo_files)
 }

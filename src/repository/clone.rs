@@ -31,7 +31,8 @@ custom_error! {pub CloneError
 /// Clone an remote repository.
 /// * `path` : Path where the data will be stored (can be relative or absolute)
 /// * `url` : URL to the a3mo folder
-pub fn clone(_path: &str, url: &str, name: &str) -> Result<(), CloneError>{
+/// * `name` : Repo name
+pub fn clone(path: &str, url: &str, name: &str) -> Result<(), CloneError>{
     Url::parse(url)?;
 
 
@@ -44,9 +45,12 @@ pub fn clone(_path: &str, url: &str, name: &str) -> Result<(), CloneError>{
 
     let arena: Arena<FileSystemEntity> = serde_json::from_str(jstring.as_str())?;
 
-    let repository = sql::sqlite::get_repository(name)?;
+    let mut conn = sqlite::get_conn()?;
 
-    let conn = sqlite::get_conn()?;
+    sql::sqlite::insert_repository(name, path, url, &mut conn)?;
+
+    let repository = sql::sqlite::get_repository(name,&mut conn)?;
+
 
     // Insert new repo into db
     for fse_node in arena.iter(){
@@ -91,8 +95,8 @@ pub fn clone(_path: &str, url: &str, name: &str) -> Result<(), CloneError>{
 
     //Download missing files
 
-    if !Path::new(&_path).exists(){
-        fs::create_dir_all(&_path)?;
+    if !Path::new(&path).exists(){
+        fs::create_dir_all(&path)?;
     }
 
     let mut to_download: Vec<(String, String)> = Vec::new();
@@ -100,7 +104,7 @@ pub fn clone(_path: &str, url: &str, name: &str) -> Result<(), CloneError>{
     for fse_node in arena.iter() {
         let fse = fse_node.get();
         if !fse.is_folder{
-            let fullpath = _path.to_owned() + "\\" + &fse.hash.to_string();
+            let fullpath = path.to_owned() + "\\" + &fse.hash.to_string();
 
             if !Path::new(&fullpath).exists(){
                 let url_p = Url::parse(url)?;

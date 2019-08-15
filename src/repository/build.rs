@@ -43,7 +43,7 @@ pub struct FileSystemEntity {
     pub hash: u64,
 }
 impl FileSystemEntity {
-    pub fn new(name: &str, repo_path: &str, _delta_patch: bool) -> Result<FileSystemEntity, BuildRepoError> {
+    pub fn new(name: &str, repo_path: &str) -> Result<FileSystemEntity, BuildRepoError> {
         let is_directory = Path::is_dir(name.as_ref());
         let mut xhash: u64 = 0;
         if !is_directory {
@@ -62,7 +62,7 @@ impl FileSystemEntity {
     }
 }
 
-fn build_tree(_name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: String, rayon: bool, delta_patch: bool) -> Result<NodeId, BuildRepoError> {
+fn build_tree(_name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: String, rayon: bool) -> Result<NodeId, BuildRepoError> {
     let mut node_map: HashMap<String, NodeId> = HashMap::new();
 
     let mut root_node: Option<NodeId> = None;
@@ -76,7 +76,7 @@ fn build_tree(_name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: Strin
             let f = fa.as_ref().unwrap();
 
             let fname = f.path().to_str().unwrap();
-            FileSystemEntity::new(fname, &repo_path.as_str(), delta_patch).unwrap()
+            FileSystemEntity::new(fname, &repo_path.as_str()).unwrap()
         }).collect();
 
         for fse in fsxe_s{
@@ -96,7 +96,7 @@ fn build_tree(_name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: Strin
 
             let fname = f.path().to_str().unwrap();
 
-            let fse = FileSystemEntity::new(fname, &repo_path.as_str(), delta_patch)?;
+            let fse = FileSystemEntity::new(fname, &repo_path.as_str())?;
 
             let fse_s = String::from(&fse.name);
 
@@ -160,7 +160,8 @@ fn remove_old_delta(path: &str) -> Result<(), BuildRepoError>{
 /// * `fmt_json` : Output formatted json
 /// * `rayon` : Parallelize building using rayon (requires multiple cores/threads)
 pub fn build(name: &str, fmt_json: bool, rayon: bool) -> Result<(), BuildRepoError> {
-    let repo = sqlite::get_repository(name)?;
+    let mut conn = sqlite::get_conn()?;
+    let repo = sqlite::get_repository(name, &mut conn)?;
 
     if !Path::exists(repo.path.as_ref()) {
         return Err(BuildRepoError::FolderNotFound);
@@ -176,13 +177,11 @@ pub fn build(name: &str, fmt_json: bool, rayon: bool) -> Result<(), BuildRepoErr
         std::fs::remove_dir_all(&sync_folder_path);
     }
 
-    if repo.delta_patch {
-        remove_old_delta(&sync_folder_path)?;
-    }
+    remove_old_delta(&sync_folder_path)?;
 
     let arena = &mut Arena::new();
 
-    let _root_node = build_tree(name, arena, String::clone(&repo.path), rayon, repo.delta_patch)?;
+    let _root_node = build_tree(name, arena, String::clone(&repo.path), rayon)?;
 
 
     let json = if !fmt_json {

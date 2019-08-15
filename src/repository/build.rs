@@ -1,8 +1,8 @@
 use crate::sql::sqlite;
 use std::path::{Path};
-use walkdir::{WalkDir, DirEntry};
+use walkdir::{WalkDir};
 use indextree::{Arena, NodeId};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime};
 
 extern crate rayon;
 use rayon::prelude::*;
@@ -18,9 +18,9 @@ use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
 use serde_json;
-use crate::sql::sqlite::Repository;
-use std::fs::{File, DirBuilder};
-use self::rusqlite::Error;
+
+use std::fs::{File};
+
 use delta_patch::mksum::SignatureOptions;
 
 extern crate failure;
@@ -43,11 +43,11 @@ pub struct FileSystemEntity {
     pub hash: u64,
 }
 impl FileSystemEntity {
-    pub fn new(name: &str, repo_path: &str, delta_patch: bool) -> Result<FileSystemEntity, BuildRepoError> {
+    pub fn new(name: &str, repo_path: &str, _delta_patch: bool) -> Result<FileSystemEntity, BuildRepoError> {
         let is_directory = Path::is_dir(name.as_ref());
         let mut xhash: u64 = 0;
         if !is_directory {
-            xhash = easy_xxhash64::file_hash::hash_path(name.as_ref())?;
+            xhash = easy_xxhash64::file_hash::hash_path(name)?;
             let signame: String = String::from(name) + ".a3mo_delta";
             let mut base = File::open(&name)?;
             let mut sig = File::create(&signame)?;
@@ -55,14 +55,14 @@ impl FileSystemEntity {
         }
         println!("{:?}:\t{:?}", &name, &xhash);
         Ok(FileSystemEntity {
-            name: String::from(name.replace(repo_path, "").trim_start_matches("\\")),
+            name: String::from(name.replace(repo_path, "").trim_start_matches('\\')),
             is_folder: is_directory,
             hash: xhash,
         })
     }
 }
 
-fn build_tree(name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: String, rayon: bool, delta_patch: bool) -> Result<NodeId, BuildRepoError> {
+fn build_tree(_name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: String, rayon: bool, delta_patch: bool) -> Result<NodeId, BuildRepoError> {
     let mut node_map: HashMap<String, NodeId> = HashMap::new();
 
     let mut root_node: Option<NodeId> = None;
@@ -76,8 +76,7 @@ fn build_tree(name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: String
             let f = fa.as_ref().unwrap();
 
             let fname = f.path().to_str().unwrap();
-            let fse = FileSystemEntity::new(fname, &repo_path.as_str(), delta_patch).unwrap();
-            fse
+            FileSystemEntity::new(fname, &repo_path.as_str(), delta_patch).unwrap()
         }).collect();
 
         for fse in fsxe_s{
@@ -116,7 +115,7 @@ fn build_tree(name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: String
         let node_index = n.1;
 
         //TODO Fix for linux
-        let xf = match node_name.rfind("\\") {
+        let xf = match node_name.rfind('\\') {
             Some(v) => {v}
             None => {0}
         };
@@ -125,9 +124,11 @@ fn build_tree(name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: String
         let parent = node_map.get(parent_name);
         match parent {
             Some(v) => {
-                #[allow(unused_must_use)] {
-                    v.append(*node_index, arena);
+                //Prevent self attaching on head
+                if v == node_index{
+                    continue
                 }
+                v.append(*node_index, arena);
             }
             None => {
                 continue
@@ -147,7 +148,7 @@ fn remove_old_delta(path: &str) -> Result<(), BuildRepoError>{
 
         if path.to_str().unwrap().contains(".a3mo_delta") {
             println!("{:?}", fx);
-            std::fs::remove_file(path);
+            std::fs::remove_file(path)?;
         }
     }
 
@@ -161,7 +162,7 @@ fn remove_old_delta(path: &str) -> Result<(), BuildRepoError>{
 pub fn build(name: &str, fmt_json: bool, rayon: bool) -> Result<(), BuildRepoError> {
     let repo = sqlite::get_repository(name)?;
 
-    if Path::exists(repo.path.as_ref()) == false {
+    if !Path::exists(repo.path.as_ref()) {
         return Err(BuildRepoError::FolderNotFound);
     };
 
@@ -176,12 +177,12 @@ pub fn build(name: &str, fmt_json: bool, rayon: bool) -> Result<(), BuildRepoErr
     }
 
     if repo.delta_patch {
-        remove_old_delta(&sync_folder_path);
+        remove_old_delta(&sync_folder_path)?;
     }
 
     let arena = &mut Arena::new();
 
-    let root_node = build_tree(name, arena, String::clone(&repo.path), rayon, repo.delta_patch)?;
+    let _root_node = build_tree(name, arena, String::clone(&repo.path), rayon, repo.delta_patch)?;
 
 
     let json = if !fmt_json {

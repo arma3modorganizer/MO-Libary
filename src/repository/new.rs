@@ -16,9 +16,10 @@ custom_error! {pub NewRepoError
 /// * `url` : URL to the mods folder. (A3MO generates an json file inside the folder)
 /// * `delta_patch` : Only transfers updated file chunks to the client, instead of updating the complete file
 pub fn new(name: &str, path: &str, url: &str, delta_patch: bool) -> Result<(), NewRepoError> {
-    if Path::exists(path.as_ref()) == false {
+    if !Path::exists(path.as_ref()) {
         return Err(NewRepoError::FolderNotFound);
     };
-    sqlite::insert_repository(name, path, url, delta_patch)?;
+    let mut conn = sqlite::get_conn()?;
+    sqlite::insert_repository(name, path, url, delta_patch,&mut conn)?;
     Ok(())
 }

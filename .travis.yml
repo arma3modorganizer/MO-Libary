@@ -6,7 +6,9 @@ os:
   - linux
 before_script:
   - cargo install cargo-kcov --force
+  - rustup component add clippy --toolchain=nightly || cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy
 script:
+  - cargo clippy --all-targets --all-features -- -D warnings
   - cargo build --verbose --all
   - cargo test --verbose --all
   - cargo doc --no-deps

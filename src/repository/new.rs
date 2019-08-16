@@ -20,6 +20,6 @@ pub fn new(name: &str, path: &str, url: &str) -> Result<(), NewRepoError> {
         return Err(NewRepoError::FolderNotFound);
     };
     let mut conn = sqlite::get_conn()?;
-    sqlite::insert_repository(name, path, url,&mut conn)?;
+    sqlite::insert_repository(name, path, url, &mut conn)?;
     Ok(())
 }

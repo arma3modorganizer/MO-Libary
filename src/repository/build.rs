@@ -1,8 +1,8 @@
 use crate::sql::sqlite;
-use std::path::{Path};
-use walkdir::{WalkDir};
 use indextree::{Arena, NodeId};
-use std::time::{SystemTime};
+use std::path::Path;
+use std::time::SystemTime;
+use walkdir::WalkDir;
 
 extern crate rayon;
 use rayon::prelude::*;
@@ -16,10 +16,10 @@ use custom_error::custom_error;
 
 use std::collections::HashMap;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json;
 
-use std::fs::{File};
+use std::fs::File;
 
 use delta_patch::mksum::SignatureOptions;
 
@@ -51,7 +51,11 @@ impl FileSystemEntity {
             let signame: String = String::from(name) + ".a3mo_delta";
             let mut base = File::open(&name)?;
             let mut sig = File::create(&signame)?;
-            delta_patch::mksum::generate_signature(&mut base, &SignatureOptions::default(), &mut sig)?;
+            delta_patch::mksum::generate_signature(
+                &mut base,
+                &SignatureOptions::default(),
+                &mut sig,
+            )?;
         }
         println!("{:?}:\t{:?}", &name, &xhash);
         Ok(FileSystemEntity {
@@ -62,7 +66,12 @@ impl FileSystemEntity {
     }
 }
 
-fn build_tree(_name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: String, rayon: bool) -> Result<NodeId, BuildRepoError> {
+fn build_tree(
+    _name: &str,
+    arena: &mut Arena<FileSystemEntity>,
+    repo_path: String,
+    rayon: bool,
+) -> Result<NodeId, BuildRepoError> {
     let mut node_map: HashMap<String, NodeId> = HashMap::new();
 
     let mut root_node: Option<NodeId> = None;
@@ -70,16 +79,20 @@ fn build_tree(_name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: Strin
     //Insert nodes
 
     if rayon {
-        let entries: Vec<std::result::Result<walkdir::DirEntry, walkdir::Error>> = WalkDir::new(&repo_path).into_iter().collect();
-        let fsxe_s: Vec<FileSystemEntity> = entries.par_iter().map(|p| {
-            let fa : &std::result::Result<walkdir::DirEntry, walkdir::Error> = p;
-            let f = fa.as_ref().unwrap();
+        let entries: Vec<std::result::Result<walkdir::DirEntry, walkdir::Error>> =
+            WalkDir::new(&repo_path).into_iter().collect();
+        let fsxe_s: Vec<FileSystemEntity> = entries
+            .par_iter()
+            .map(|p| {
+                let fa: &std::result::Result<walkdir::DirEntry, walkdir::Error> = p;
+                let f = fa.as_ref().unwrap();
 
-            let fname = f.path().to_str().unwrap();
-            FileSystemEntity::new(fname, &repo_path.as_str()).unwrap()
-        }).collect();
+                let fname = f.path().to_str().unwrap();
+                FileSystemEntity::new(fname, &repo_path.as_str()).unwrap()
+            })
+            .collect();
 
-        for fse in fsxe_s{
+        for fse in fsxe_s {
             let fse_s = String::from(&fse.name);
 
             let node_id = arena.new_node(fse);
@@ -89,8 +102,7 @@ fn build_tree(_name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: Strin
             }
             node_map.insert(fse_s, node_id);
         }
-
-    }else {
+    } else {
         for entry in WalkDir::new(&repo_path) {
             let f = entry?;
 
@@ -116,8 +128,8 @@ fn build_tree(_name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: Strin
 
         //TODO Fix for linux
         let xf = match node_name.rfind('\\') {
-            Some(v) => {v}
-            None => {0}
+            Some(v) => v,
+            None => 0,
         };
         let parent_name = node_name.split_at(xf).0;
 
@@ -125,24 +137,21 @@ fn build_tree(_name: &str, arena: &mut Arena<FileSystemEntity>, repo_path: Strin
         match parent {
             Some(v) => {
                 //Prevent self attaching on head
-                if v == node_index{
-                    continue
+                if v == node_index {
+                    continue;
                 }
                 v.append(*node_index, arena);
             }
-            None => {
-                continue
-            }
+            None => continue,
         }
-
     }
 
     Ok(root_node.unwrap())
 }
 
-fn remove_old_delta(path: &str) -> Result<(), BuildRepoError>{
+fn remove_old_delta(path: &str) -> Result<(), BuildRepoError> {
     let root_path = path.trim_end_matches(".a3mo");
-    for f in WalkDir::new(root_path){
+    for f in WalkDir::new(root_path) {
         let fx = f?;
         let path = fx.path();
 
@@ -170,10 +179,11 @@ pub fn build(name: &str, fmt_json: bool, rayon: bool) -> Result<(), BuildRepoErr
     println!("Building repository {:?}", &name);
     let start = SystemTime::now();
 
-    let sync_folder_path : String = String::clone(&repo.path) + "\\.a3mo";
+    let sync_folder_path: String = String::clone(&repo.path) + "\\.a3mo";
 
     //Delete sync folder
-    #[allow(unused_must_use)] {
+    #[allow(unused_must_use)]
+    {
         std::fs::remove_dir_all(&sync_folder_path);
     }
 
@@ -183,10 +193,9 @@ pub fn build(name: &str, fmt_json: bool, rayon: bool) -> Result<(), BuildRepoErr
 
     let _root_node = build_tree(name, arena, String::clone(&repo.path), rayon)?;
 
-
     let json = if !fmt_json {
         serde_json::to_string(&arena)?
-    }else{
+    } else {
         serde_json::to_string_pretty(&arena)?
     };
 

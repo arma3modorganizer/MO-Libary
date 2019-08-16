@@ -24,8 +24,6 @@ Due to the WIP status of the project, anything can and will most likely change !
 ## TODO
  - Add Update.rs
     - Updates given repository (client-side)
- - Add Run.rs
-    - Starts ArmA3 with given repository and additional arguments
  
  
 ## Licenses

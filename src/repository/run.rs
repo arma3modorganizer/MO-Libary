@@ -1,8 +1,7 @@
-
-
 extern crate custom_error;
-use custom_error::custom_error;
 use crate::sql::sqlite;
+use custom_error::custom_error;
+use std::process::Command;
 use std::time::SystemTime;
 
 extern crate rusqlite;
@@ -19,8 +18,12 @@ custom_error! {pub RunError
 /// * `arma_path` : Path to Arma3 executable
 /// * `tmp_folder` : Path to tmp folder
 /// * `opt_args` : Optional arguments
-pub fn run(name: &str, arma_path: &str, tmp_folder: &str, opt_args: Option<Vec<&str>>) -> Result<(), RunError> {
-
+pub fn run(
+    name: &str,
+    arma_path: &str,
+    tmp_folder: &str,
+    opt_args: Option<Vec<String>>,
+) -> Result<(), RunError> {
     let start = SystemTime::now();
 
     let mut conn = sqlite::get_conn()?;
@@ -36,13 +39,13 @@ pub fn run(name: &str, arma_path: &str, tmp_folder: &str, opt_args: Option<Vec<&
     //Cleanup old folder
     std::fs::remove_dir_all(tmp_folder).unwrap_or_default();
 
-    for repo_folder in repo_folders {
+    for repo_folder in &repo_folders {
         let xfolder = tmp_folder.to_owned() + "\\" + &repo_folder.name;
         println!("{:?}", xfolder);
         std::fs::create_dir_all(xfolder)?;
     }
 
-    for repo_file in repo_files {
+    for repo_file in &repo_files {
         let dfile = tmp_folder.to_owned() + "\\" + &repo_file.name;
         let sfile = repository.path.to_owned() + "\\" + &repo_file.xx_hash64;
 
@@ -52,13 +55,35 @@ pub fn run(name: &str, arma_path: &str, tmp_folder: &str, opt_args: Option<Vec<&
         std::fs::hard_link(sfile, dfile)?;
     }
 
-    println!("{:?}", arma_path);
-    println!("{:?}", opt_args);
+    let mut args: Vec<String> = Vec::new();
 
+    if let Some(mut v) = opt_args {
+        args.append(&mut v);
+    }
+
+    for repo_folder in &repo_folders {
+        if repo_folder.is_root {
+            continue;
+        }
+        let fchar = repo_folder.name.chars().nth(0);
+        if fchar.unwrap() == '@' && !repo_folder.name.contains('\\') {
+            println!("{:?}", repo_folder.name);
+            let f = "-mod=".to_owned()
+                + &tmp_folder.to_owned()
+                + "\\"
+                + String::from(&repo_folder.name).as_str()
+                + ";";
+            args.push(f);
+        }
+    }
+
+    println!("{:?}", arma_path);
+    println!("{:?}", args);
+
+    let _fx = Command::new(arma_path).args(args).spawn();
 
     let elapsed = start.elapsed()?;
 
     println!("Elapsed: {:?}", elapsed);
-
     Ok(())
 }
